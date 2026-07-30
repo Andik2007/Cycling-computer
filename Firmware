@@ -1,0 +1,1419 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
+#include <Adafruit_AHTX0.h>
+#include <XPT2046_Touchscreen.h>
+#include <SD.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <TinyGPS++.h>
+#include <esp_sleep.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+
+Adafruit_ILI9341 d = Adafruit_ILI9341(10, 9, 8); 
+XPT2046_Touchscreen tc(2);
+SPIClass b2(HSPI); 
+Adafruit_AHTX0 ah; 
+
+WebServer w(80);
+File f;
+File gf; 
+TinyGPSPlus tg;
+HardwareSerial gs(1); 
+
+String n = "";
+bool g = false;
+bool cs = true; 
+bool ah_ok = false; 
+bool sl_r = false; 
+bool sk = false; 
+bool a_c = true; 
+bool rg = false; 
+
+float lx = 180.0, ly = 90.0, hx = -180.0, hy = -90.0;
+bool bb = false; 
+float zm = 1.0; 
+float ox_m = 0.0, oy_m = 0.0; 
+float vlx = 0.0, vly = 0.0, vx = 0.0001, vy = 0.0001; 
+
+int ox = -1, oy = -1; 
+
+int vm = 0; 
+int pm = -1; 
+float dst = 0.0; 
+double py = 0.0, px = 0.0; 
+
+bool tr = false; 
+uint32_t te = 0; 
+uint32_t tm_s = 0; 
+uint32_t lu = 0; 
+
+float mx = 0.0; 
+
+float c_sp = -1.0, c_as = -1.0, c_ds = -1.0, c_mx = -1.0;
+int c_h = -1, c_m = -1, c_th = -1, c_tm = -1, c_ts = -1, c_st = -1;
+float c_t = -999.0, c_hm = -999.0;
+
+uint16_t bg = ILI9341_WHITE;
+uint16_t tx = ILI9341_BLACK;
+uint16_t rt = ILI9341_BLUE;
+bool cur_n = false;
+
+const int b_p = 1; 
+int c_bp = -1; 
+
+double u_la = 0.0, u_lo = 0.0; 
+float u_sp = 0.0; 
+bool u_ok = false;
+bool u_ph = false; 
+
+double p_la = 0.0, p_lo = 0.0;
+float p_sp = 0.0;
+bool p_up = false; 
+
+uint32_t t_t = 0;
+int t_c = 0;
+int l_tx = 0;
+int l_ty = 0;
+bool p_tc = false; 
+
+const char h[] PROGMEM = R"=====(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#1c1c1e,#000000);background-attachment:fixed;min-height:100vh;color:#f2f2f7;padding:15px;margin:0}
+  .bx{background:#1c1c1e;padding:25px;border-radius:16px;max-width:400px;margin:auto;box-shadow:0 10px 30px rgba(0,0,0,0.8);border:1px solid #333}
+  h2,h3{font-weight:600;margin-top:0;color:#fff}
+  button{background:#2c2c2e;color:#0a84ff;border:none;padding:14px;width:100%;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:0.2s}
+  button:active{opacity:0.7}
+  .btn-st{background:#32d74b;color:#000}
+  .btn-sw{background:#ff9f0a;color:#000}
+  .btn-slp{background:#5a5a5f;color:#fff}
+  .btn-cl2,.btn-cl{background:#ff453a;color:#fff}
+  input[type="file"]{background:#2c2c2e;padding:10px;border-radius:8px;margin-bottom:15px;width:calc(100% - 20px);border:1px solid #3a3a3c;color:#fff}
+  .pc{width:100%;background:#3a3a3c;border-radius:8px;margin-top:10px;display:none;height:20px;overflow:hidden}
+  .pb{width:0%;height:100%;background:#32d74b;text-align:center;color:#000;line-height:20px;font-weight:bold;font-size:12px}
+  details{background:#2c2c2e;padding:15px;border-radius:12px;margin-top:15px}
+  summary{cursor:pointer;font-weight:600;outline:none}
+  ul{list-style:none;padding:0;margin-top:15px}
+  li{background:#3a3a3c;padding:12px;margin-bottom:8px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+  .btn-sm{width:65px;height:45px;background:#0a84ff;color:#fff;margin:4px;font-size:14px;border-radius:10px;display:inline-block;padding:0}
+  .mc{background:#2c2c2e;padding:15px;border-radius:12px;text-align:center;margin-bottom:15px}
+  #ge{color:#ff453a;font-size:14px;text-align:center;margin-bottom:15px;font-weight:600;display:none}
+</style>
+</head>
+<body>
+<div class="bx">
+  <div id="ge"></div>
+  <button class="btn-sw" onclick="fetch('/sw')">Toggle Screen</button>
+  <button class="btn-st" onclick="fetch('/t_tg')">Start / Stop Track</button>
+  <button style="background:#0a84ff;color:#fff" onclick="window.location.href='/dl'">Download Ride GPX</button>
+  <button class="btn-slp" onclick="fetch('/slp')">Sleep Mode</button>
+  <button class="btn-cl2" onclick="fetch('/t_cl')">Clear Stats</button>
+  
+  <div class="mc">
+    <h3>Map View</h3>
+    <button class="btn-sm" onclick="fetch('/mv?x=0&y=1')">Up</button><br>
+    <button class="btn-sm" onclick="fetch('/mv?x=-1&y=0')">Left</button>
+    <button class="btn-sm" onclick="fetch('/ac')">Cen</button>
+    <button class="btn-sm" onclick="fetch('/mv?x=1&y=0')">Right</button><br>
+    <button class="btn-sm" onclick="fetch('/mv?x=0&y=-1')">Down</button><br><br>
+    <button class="btn-sm" style="background:#32d74b;color:#000" onclick="fetch('/zm?v=1')">Z+</button>
+    <button class="btn-sm" style="background:#ff453a" onclick="fetch('/zm?v=-1')">Z-</button>
+  </div>
+
+  <h2>Upload GPX</h2>
+  <input type="file" id="f1" accept=".gpx">
+  <button onclick="up('f1', 'c1', 'b1')">Upload GPX</button>
+  <div id="c1" class="pc"><div id="b1" class="pb">0%</div></div>
+
+  <h2>Upload Map (GeoJSON)</h2>
+  <input type="file" id="f2" accept=".json,.geojson">
+  <button onclick="up('f2', 'c2', 'b2')">Upload Map</button>
+  <div id="c2" class="pc"><div id="b2" class="pb">0%</div></div>
+
+  <details ontoggle="ls(this)"><summary>Routes</summary><ul id="rl"></ul></details>
+</div>
+<script>
+let ed = document.getElementById("ge");
+if(navigator.geolocation){
+  navigator.geolocation.watchPosition(function(p){
+    let s = p.coords.speed;
+    if(!s){ s = 0; }
+    fetch('/pgps?lat='+p.coords.latitude+'&lon='+p.coords.longitude+'&spd='+(s*3.6));
+    ed.style.display = "none";
+  }, function(e){
+    ed.style.display = "block";
+    ed.innerHTML = "GPS Blocked: " + e.message;
+  }, {enableHighAccuracy: true});
+} else {
+  ed.style.display = "block";
+  ed.innerHTML = "No Geolocation API";
+}
+function up(i, ci, bi) {
+  let a = document.getElementById(i).files[0];
+  if (!a) { return; }
+  let b = new FormData(); b.append('f', a);
+  let c = new XMLHttpRequest();
+  let x = document.getElementById(ci); let y = document.getElementById(bi);
+  x.style.display = 'block'; y.style.width = '0%'; y.innerHTML = '0%';
+  c.upload.onprogress = function(e) {
+    if (e.lengthComputable) {
+      let z = Math.round((e.loaded / e.total) * 100);
+      y.style.width = z + '%'; y.innerHTML = z + '%';
+    }
+  };
+  c.onload = function() {
+    if (c.status === 200) { y.innerHTML = 'OK'; setTimeout(function(){ x.style.display='none'; }, 2000); }
+  };
+  c.open('POST', '/up'); c.send(b);
+}
+function ls(e) {
+  if (!e.open) { return; }
+  let a = new XMLHttpRequest();
+  a.onload = function() {
+    if (a.status === 200) {
+      let b = JSON.parse(a.responseText);
+      let c = document.getElementById('rl'); c.innerHTML = '';
+      for (let i = 0; i < b.length; i++) {
+        let l = document.createElement('li');
+        l.innerHTML = '<span>' + b[i].n + '</span> <button class="btn-sm" style="width:auto;padding:0 10px;" onclick="dr(\'' + b[i].n + '\')">Draw</button>';
+        c.appendChild(l);
+      }
+    }
+  };
+  a.open('GET', '/ls'); a.send();
+}
+function dr(a) { let b = new XMLHttpRequest(); b.open('GET', '/dr?f=' + a); b.send(); }
+</script>
+</body>
+</html>
+)=====";
+
+uint16_t cl(float s) {
+  int r = 0;
+  int gc = 0;
+  if (s < 25.0) {
+    r = (s / 25.0) * 31.0;
+    gc = 63;
+  } else if (s < 60.0) {
+    r = 31;
+    gc = 63.0 - (((s - 25.0) / 35.0) * 63.0);
+  } else {
+    r = 31;
+    gc = 0;
+  }
+  return (r << 11) | (gc << 5);
+}
+
+int g_bat() {
+  float v = (analogReadMilliVolts(b_p) / 1000.0) * 2.065; 
+  
+  int p = (v - 3.3) / (4.15 - 3.3) * 100;
+  
+  if (p > 100) {
+    p = 100;
+  }
+  if (p < 0) {
+    p = 0;
+  }
+  
+  return p;
+}
+
+void p_js(String fn) {
+  File st = SD.open(fn);
+  if (!st) {
+    return;
+  }
+  
+  if (SD.exists("/map.bin")) {
+    SD.remove("/map.bin");
+  }
+  File fm = SD.open("/map.bin", FILE_WRITE);
+  
+  int tp = 0; 
+  float pl = 0.0, pn = 0.0;
+  String b = "";
+  int ps = 0; 
+  String s1 = "", s2 = "";
+  
+  while (st.available()) {
+    char c = st.read();
+    
+    if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
+      continue;
+    }
+    
+    b += c;
+    if (b.length() > 30) {
+      b.remove(0, 1);
+    }
+    
+    if (b.indexOf("\"coordinates\"") >= 0 || b.indexOf("\"Feature\"") >= 0) {
+      tp = 0; pl = 0.0; pn = 0.0;
+      b = "";
+    } else if (b.indexOf("\"asphalt\"") >= 0 || b.indexOf("\"paved\"") >= 0) {
+      tp = 1;
+      b = "";
+    } else if (b.indexOf("\"gravel\"") >= 0 || b.indexOf("\"dirt\"") >= 0) {
+      tp = 2;
+      b = "";
+    }
+    
+    if (c == '[') {
+      ps = 1; 
+      s1 = ""; s2 = "";
+    } else if (c == ',') {
+      if (ps == 1) {
+        ps = 2; 
+      } else {
+        ps = 0; 
+      }
+    } else if (c == ']') {
+      if (ps == 2) {
+        if (s1.length() > 0) {
+          if (s2.length() > 0) {
+            float nn = s1.toFloat();
+            float lt = s2.toFloat();
+            if (nn != 0.0 && lt != 0.0) {
+              if (pl != 0.0 && pn != 0.0) {
+                uint8_t t_out = tp;
+                fm.write(&t_out, 1);
+                fm.write((uint8_t*)&pl, 4);
+                fm.write((uint8_t*)&pn, 4);
+                fm.write((uint8_t*)&lt, 4);
+                fm.write((uint8_t*)&nn, 4);
+              }
+              pl = lt; pn = nn;
+            }
+          }
+        }
+      } else {
+        pl = 0.0; pn = 0.0;
+      }
+      ps = 0;
+    } else if (c == '.' || c == '-' || (c >= '0' && c <= '9')) {
+      if (ps == 1) {
+        if (s1.length() < 15) { s1 += c; }
+      } else if (ps == 2) {
+        if (s2.length() < 15) { s2 += c; }
+      }
+    } else {
+      ps = 0; 
+    }
+  }
+  
+  fm.close();
+  st.close();
+  SD.remove(fn);
+}
+
+bool is_n() {
+  if (tg.time.isValid()) {
+    int h = tg.time.hour() + 4;
+    if (h >= 24) {
+      h = h - 24;
+    }
+    if (h >= 20) {
+      return true;
+    } else if (h < 6) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void pg() { w.send(200, "text/html", h); }
+void ok() { w.send(200, "text/plain", "OK"); }
+
+void ssw() {
+  vm++;
+  if (vm > 2) {
+    vm = 0;
+  }
+  cs = true;
+  g = true;
+  w.send(200, "text/plain", "OK");
+}
+
+void s_slp() {
+  sl_r = true;
+  w.send(200, "text/plain", "OK");
+}
+
+void s_ac() {
+  a_c = true;
+  if (bb) {
+    if (u_ok) {
+      ox_m = u_lo - ((lx + hx) / 2.0);
+      oy_m = u_la - ((ly + hy) / 2.0);
+      ox = -1;
+    }
+  }
+  cs = true;
+  g = true;
+  w.send(200, "text/plain", "OK");
+}
+
+void s_zm() {
+  if (w.hasArg("v")) {
+    int v = w.arg("v").toInt();
+    if (v == 1) {
+      zm = zm * 1.5;
+    } else if (v == -1) {
+      zm = zm / 1.5;
+    }
+    cs = true;
+    g = true;
+  }
+  w.send(200, "text/plain", "OK");
+}
+
+void s_mv() {
+  if (w.hasArg("x") && w.hasArg("y")) {
+    float x = w.arg("x").toFloat();
+    float y = w.arg("y").toFloat();
+    float cvx = (hx - lx) / zm;
+    float cvy = (hy - ly) / zm;
+    ox_m = ox_m + (x * cvx * 0.25);
+    oy_m = oy_m + (y * cvy * 0.25);
+    a_c = false; 
+    cs = true;
+    g = true;
+  }
+  w.send(200, "text/plain", "OK");
+}
+
+void s_pgps() {
+  if (w.hasArg("lat")) {
+    if (w.hasArg("lon")) {
+      p_la = w.arg("lat").toDouble();
+      p_lo = w.arg("lon").toDouble();
+      if (w.hasArg("spd")) {
+        p_sp = w.arg("spd").toFloat();
+      }
+      p_up = true;
+    }
+  }
+  w.send(200, "text/plain", "OK");
+}
+
+void t_tg() {
+  if (tr) {
+    tr = false;
+    te = millis() - tm_s;
+    if (rg) {
+      gf = SD.open("/trk.gpx", FILE_APPEND);
+      if (gf) {
+        gf.println("</trkseg></trk></gpx>");
+        gf.close();
+      }
+      rg = false;
+    }
+  } else {
+    tr = true;
+    tm_s = millis() - te;
+    if (SD.exists("/trk.gpx")) {
+      SD.remove("/trk.gpx");
+    }
+    gf = SD.open("/trk.gpx", FILE_WRITE);
+    if (gf) {
+      gf.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      gf.println("<gpx version=\"1.1\" creator=\"ESP32\"><trk><name>Ride</name><trkseg>");
+      gf.close();
+      rg = true;
+    }
+  }
+  g = true;
+  w.send(200, "text/plain", "OK");
+}
+
+void t_cl() {
+  tr = false;
+  te = 0;
+  dst = 0.0;
+  py = 0.0;
+  px = 0.0;
+  mx = 0.0; 
+  c_as = -1.0; 
+  c_ds = -1.0; 
+  c_mx = -1.0;
+  c_th = -1; 
+  c_tm = -1; 
+  c_ts = -1;
+  g = true;
+  w.send(200, "text/plain", "OK");
+}
+
+void sv(String a, String p) {
+  if (SD.exists(p)) { SD.remove(p); }
+  File c = SD.open(p, FILE_WRITE);
+  if (c) { c.print(a); c.close(); }
+}
+
+void gls() {
+  String s = "[";
+  File r = SD.open("/");
+  bool p = true;
+  while (File e = r.openNextFile()) {
+    String m = e.name();
+    if (!e.isDirectory()) {
+      String tl = m;
+      tl.toLowerCase();
+      if (tl.endsWith(".gpx")) {
+        if (!p) { 
+          s += ","; 
+        } else { 
+          p = false; 
+        }
+        s += "{\"n\":\"" + m + "\",\"s\":" + String(e.size() / 1024) + "}";
+      }
+    }
+  }
+  s += "]";
+  w.send(200, "application/json", s);
+}
+
+void sdr() {
+  if (w.hasArg("f")) {
+    String a = w.arg("f");
+    if (a.startsWith("/")) {
+      n = a;
+    } else {
+      n = "/" + a;
+    }
+    sv(n, "/last.txt"); 
+    bb = false; 
+    zm = 1.0; 
+    ox_m = 0.0; 
+    oy_m = 0.0; 
+    a_c = true;
+    cs = true; 
+    g = true;
+    w.send(200, "text/plain", "OK");
+  } else {
+    w.send(400, "text/plain", "ERR");
+  }
+}
+
+void up() {
+  HTTPUpload& l = w.upload();
+  if (l.status == UPLOAD_FILE_START) {
+    String tn = "";
+    if (l.filename.startsWith("/")) {
+      tn = l.filename;
+    } else {
+      tn = "/" + l.filename;
+    }
+    f = SD.open(tn, FILE_WRITE);
+  } 
+  if (l.status == UPLOAD_FILE_WRITE) {
+    if (f) { f.write(l.buf, l.currentSize); }
+  } 
+  if (l.status == UPLOAD_FILE_END) {
+    if (f) {
+      String tn = "";
+      if (l.filename.startsWith("/")) {
+        tn = l.filename;
+      } else {
+        tn = "/" + l.filename;
+      }
+      f.close();
+      
+      String tl = tn;
+      tl.toLowerCase();
+      
+      if (tl.endsWith(".gpx")) {
+        n = tn;
+        sv(n, "/last.txt");
+        bb = false;
+        zm = 1.0; 
+        ox_m = 0.0; 
+        oy_m = 0.0;
+        a_c = true;
+        cs = true; 
+        g = true;
+      } else if (tl.endsWith(".json") || tl.endsWith(".geojson")) {
+        p_js(tn);
+        cs = true; 
+        g = true;
+      }
+    }
+  }
+}
+
+void d_dl() {
+  if (!SD.exists("/trk.gpx")) {
+    w.send(404, "text/plain", "ERR");
+    return;
+  }
+  File t = SD.open("/trk.gpx", FILE_READ);
+  w.sendHeader("Content-Disposition", "attachment; filename=ride.gpx");
+  w.streamFile(t, "application/gpx+xml");
+  t.close();
+}
+
+void ug() {
+  while (gs.available() > 0) {
+    char c = gs.read();
+    tg.encode(c);
+  }
+  
+  bool hw = tg.location.isUpdated();
+  
+  if (hw || p_up) {
+    if (hw) {
+      u_la = tg.location.lat();
+      u_lo = tg.location.lng();
+      if (tg.speed.isValid()) {
+        u_sp = tg.speed.kmph();
+      } else {
+        u_sp = 0.0;
+      }
+      u_ok = true;
+      u_ph = false;
+    } else if (p_up) {
+      u_la = p_la;
+      u_lo = p_lo;
+      u_sp = p_sp;
+      u_ok = true;
+      u_ph = true;
+    }
+    p_up = false;
+    
+    if (tr) {
+      if (py != 0.0) {
+        if (u_sp > 2.5) {
+          dst += tg.distanceBetween(u_la, u_lo, py, px) / 1000.0;
+        }
+      }
+      
+      if (rg) {
+        if (tg.location.isValid() && tg.date.isValid() && tg.time.isValid()) {
+          gf = SD.open("/trk.gpx", FILE_APPEND);
+          if (gf) {
+            gf.print("<trkpt lat=\"");
+            gf.print(u_la, 6);
+            gf.print("\" lon=\"");
+            gf.print(u_lo, 6);
+            gf.print("\"><time>");
+            
+            int yr = tg.date.year();
+            int mo = tg.date.month();
+            int dy = tg.date.day();
+            int hr = tg.time.hour();
+            int mn = tg.time.minute();
+            int sc = tg.time.second();
+            
+            gf.print(yr);
+            gf.print("-");
+            if (mo < 10) { gf.print("0"); }
+            gf.print(mo);
+            gf.print("-");
+            if (dy < 10) { gf.print("0"); }
+            gf.print(dy);
+            gf.print("T");
+            if (hr < 10) { gf.print("0"); }
+            gf.print(hr);
+            gf.print(":");
+            if (mn < 10) { gf.print("0"); }
+            gf.print(mn);
+            gf.print(":");
+            if (sc < 10) { gf.print("0"); }
+            gf.print(sc);
+            gf.println("Z</time></trkpt>");
+            
+            gf.close();
+          }
+        }
+      }
+    }
+    py = u_la; 
+    px = u_lo;
+
+    if (a_c) {
+      if (vm == 0) {
+        if (bb) {
+          int c_x = (u_lo - vlx) * 240.0 / vx;
+          int c_y = 320 - ((u_la - vly) * 320.0 / vy);
+          if (c_x < 40 || c_x > 200 || c_y < 60 || c_y > 260) {
+            ox_m = u_lo - ((lx + hx) / 2.0);
+            oy_m = u_la - ((ly + hy) / 2.0);
+            cs = true;
+            ox = -1;
+          }
+        }
+      }
+    }
+    g = true; 
+  }
+}
+
+void db() {
+  bool i = false;
+  if (c_sp == -1.0) {
+    i = true;
+    c_sp = -2.0; 
+  }
+  
+  if (i) {
+    d.drawRoundRect(10, 20, 220, 60, 8, tx);
+    d.drawRoundRect(10, 100, 220, 60, 8, tx);
+    d.drawRoundRect(10, 180, 220, 60, 8, tx);
+    
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(45, 120); 
+    d.print("CLEAR STATS");
+    d.setCursor(55, 200); 
+    d.print("SLEEP MODE");
+  }
+  
+  static bool l_tr = !tr;
+  if (l_tr != tr || i) {
+    d.setTextSize(2);
+    d.setCursor(55, 40);
+    if (tr) {
+      d.setTextColor(ILI9341_RED, bg);
+      d.print("STOP TRACK ");
+    } else {
+      d.setTextColor(ILI9341_GREEN, bg);
+      d.print("START TRACK");
+    }
+    l_tr = tr;
+  }
+}
+
+void dd() {
+  bool i = false;
+  if (c_sp == -1.0) {
+    i = true;
+    d.fillScreen(bg);
+    
+    d.drawRoundRect(5, 35, 230, 80, 8, tx); 
+    d.drawRoundRect(5, 125, 110, 60, 8, tx); 
+    d.drawRoundRect(125, 125, 110, 60, 8, tx); 
+    d.drawRoundRect(5, 195, 110, 60, 8, tx); 
+    d.drawRoundRect(125, 195, 110, 60, 8, tx); 
+    d.drawRoundRect(5, 265, 110, 50, 8, tx); 
+    d.drawRoundRect(125, 265, 110, 50, 8, tx); 
+    
+    d.setTextSize(1);
+    d.setTextColor(tx, bg);
+    
+    d.setCursor(15, 40); d.print("SPEED");
+    d.setCursor(15, 130); d.print("AVG SPD");
+    d.setCursor(135, 130); d.print("MAX SPD");
+    d.setCursor(15, 200); d.print("DISTANCE");
+    d.setCursor(135, 200); d.print("TRACK TIME");
+    d.setCursor(15, 270); d.print("TEMP");
+    d.setCursor(135, 270); d.print("HUMIDITY");
+  }
+
+  int st = 0;
+  if (u_ph) {
+    st = 99;
+  } else {
+    if (tg.satellites.isValid()) {
+      st = tg.satellites.value();
+    }
+  }
+
+  if (st != c_st || i) {
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(5, 10);
+    if (st == 99) {
+      d.print("PH  ");
+    } else {
+      d.print("S:");
+      d.print(st);
+      d.print("  ");
+    }
+    c_st = st;
+  }
+
+  int th = 0, tm_m = 0;
+  if (tg.time.isValid()) {
+    th = tg.time.hour() + 4;
+    if (th >= 24) {
+      th = th - 24;
+    }
+    tm_m = tg.time.minute();
+  }
+  if (th != c_h || tm_m != c_m || i) {
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(75, 10);
+    if (th < 10) {
+      d.print("0");
+    }
+    d.print(th);
+    d.print(":");
+    if (tm_m < 10) {
+      d.print("0");
+    }
+    d.print(tm_m);
+    c_h = th;
+    c_m = tm_m;
+  }
+
+  int bp = g_bat();
+  if (bp != c_bp || i) {
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(150, 10); 
+    d.print("B:");
+    d.print(bp);
+    d.print("%  ");
+    c_bp = bp;
+  }
+
+  if (u_sp > mx) {
+    mx = u_sp;
+  }
+  if (u_sp != c_sp || i) {
+    d.setTextSize(5);
+    d.setCursor(15, 60);
+    d.setTextColor(cl(u_sp), bg);
+    d.print(u_sp, 1);
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.print(" km/h ");
+    c_sp = u_sp;
+  }
+
+  uint32_t cu = te;
+  if (tr) {
+    cu = millis() - tm_s;
+  }
+  
+  float hr = cu / 3600000.0;
+  float a_sp = 0.0;
+  if (hr > 0.0) {
+    a_sp = dst / hr;
+  }
+  
+  if (a_sp != c_as || i) {
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(15, 155);
+    d.print(a_sp, 1);
+    d.print("  ");
+    c_as = a_sp;
+  }
+  
+  if (mx != c_mx || i) {
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(135, 155);
+    d.print(mx, 1);
+    d.print("  ");
+    c_mx = mx;
+  }
+
+  if (dst != c_ds || i) {
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(15, 225);
+    d.print(dst, 1);
+    d.print("  ");
+    c_ds = dst;
+  }
+
+  uint32_t s_tot = cu / 1000;
+  uint32_t t_h = s_tot / 3600;
+  uint32_t t_m = (s_tot % 3600) / 60;
+  uint32_t t_s = s_tot % 60;
+  
+  if (t_h != c_th || t_m != c_tm || t_s != c_ts || i) {
+    d.setTextSize(2);
+    d.setTextColor(tx, bg);
+    d.setCursor(135, 225);
+    if (t_h < 10) {
+      d.print("0");
+    }
+    d.print(t_h);
+    d.print(":");
+    if (t_m < 10) {
+      d.print("0");
+    }
+    d.print(t_m);
+    d.print(":");
+    if (t_s < 10) {
+      d.print("0");
+    }
+    d.print(t_s);
+    c_th = t_h;
+    c_tm = t_m;
+    c_ts = t_s;
+  }
+
+  if (ah_ok) {
+    sensors_event_t h_e, t_e;
+    if (ah.getEvent(&h_e, &t_e)) {
+      if (t_e.temperature != c_t || i) {
+        d.setTextSize(2);
+        d.setTextColor(tx, bg);
+        d.setCursor(15, 290);
+        d.print(t_e.temperature, 1);
+        d.print("C ");
+        c_t = t_e.temperature;
+      }
+      if (h_e.relative_humidity != c_hm || i) {
+        d.setTextSize(2);
+        d.setTextColor(tx, bg);
+        d.setCursor(135, 290);
+        d.print(h_e.relative_humidity, 0);
+        d.print("% ");
+        c_hm = h_e.relative_humidity;
+      }
+    } else {
+      ah_ok = false;
+    }
+  } else {
+    if (c_t != -999.0 || i) {
+      d.setTextSize(2);
+      d.setTextColor(tx, bg);
+      d.setCursor(15, 290);
+      d.print("ERR ");
+      d.setCursor(135, 290);
+      d.print("ERR ");
+      c_t = -999.0;
+      c_hm = -999.0;
+    }
+  }
+}
+
+void d_m() {
+  File f2 = SD.open("/map.bin");
+  if (f2) {
+    float x_m = 240.0 / vx;
+    float y_m = 320.0 / vy;
+    
+    float nx = vlx - (50.0 / x_m);
+    float xx = vlx + (290.0 / x_m);
+    float ny = vly - (50.0 / y_m); 
+    float xy = vly + (370.0 / y_m);
+
+    uint16_t c0;
+    if (bg == ILI9341_BLACK) {
+      c0 = ILI9341_DARKGREY;
+    } else {
+      c0 = ILI9341_LIGHTGREY;
+    }
+
+    static uint8_t* bf = NULL;
+    if (bf == NULL) {
+      bf = (uint8_t*)malloc(34000);
+    }
+    
+    if (bf) {
+      d.startWrite(); 
+      
+      while (f2.available()) {
+        int r_c = f2.read(bf, 34000);
+        int s_c = r_c / 17;
+        
+        for (int i = 0; i < s_c; i++) {
+          int p = i * 17;
+          uint8_t t = bf[p];
+          
+          float y1 = *(float*)(bf + p + 1);
+          float x1 = *(float*)(bf + p + 5);
+          float y2 = *(float*)(bf + p + 9);
+          float x2 = *(float*)(bf + p + 13);
+
+          if ((x1 < nx && x2 < nx) || (x1 > xx && x2 > xx) || (y1 < ny && y2 < ny) || (y1 > xy && y2 > xy)) {
+            continue; 
+          }
+
+          int c_x1 = (x1 - vlx) * x_m;
+          int c_y1 = 320 - ((y1 - vly) * y_m);
+          int c_x2 = (x2 - vlx) * x_m;
+          int c_y2 = 320 - ((y2 - vly) * y_m);
+
+          if (c_x1 == c_x2) {
+            if (c_y1 == c_y2) {
+              continue; 
+            }
+          }
+
+          uint16_t c = c0;
+          if (t == 1) {
+            c = ILI9341_RED;
+          } else if (t == 2) {
+            c = ILI9341_ORANGE;
+          }
+          
+          d.writeLine(c_x1, c_y1, c_x2, c_y2, c); 
+        }
+        
+        d.endWrite(); 
+        yield(); 
+        w.handleClient(); 
+        ug(); 
+        d.startWrite(); 
+      }
+      
+      d.endWrite();
+    }
+    f2.close();
+  }
+}
+
+void dr() {
+  if (cs) {
+    if (a_c) {
+      if (u_ok) {
+        ox_m = u_lo - ((lx + hx) / 2.0);
+        oy_m = u_la - ((ly + hy) / 2.0);
+      }
+    }
+
+    d.fillScreen(bg);
+    d.setTextColor(tx, bg);
+    d.setTextSize(2);
+
+    if (!sk) {
+      d.setCursor(10, 50);
+      d.print("SD ERR: Check card");
+      cs = false;
+    } else if (n == "") {
+      d.setCursor(10, 50);
+      d.print("ERR: No File");
+      cs = false;
+    } else {
+      if (!bb) {
+        d.setCursor(10, 40);
+        d.print("Init GPX Cache...");
+        d.setCursor(10, 70);
+        d.print(n);
+        
+        lx = 180.0; ly = 90.0; hx = -180.0; hy = -90.0;
+        f = SD.open(n);
+        
+        if (SD.exists("/t.bin")) { SD.remove("/t.bin"); }
+        File tb = SD.open("/t.bin", FILE_WRITE);
+          
+        if (f && tb) {
+          char cb[256];
+          int lc = 0;
+          int pt = 0;
+            
+          while (f.available()) {
+            lc++;
+            if (lc > 50) {
+              yield(); 
+              w.handleClient();
+              ug(); 
+              lc = 0;
+            }
+            int sz = f.readBytesUntil('\n', cb, 255);
+            cb[sz] = '\0';
+            char* p1 = strstr(cb, "lat=\"");
+            if (p1) {
+              float y = atof(p1 + 5);
+              char* p2 = strstr(cb, "lon=\"");
+              if (p2) {
+                float x = atof(p2 + 5);
+                tb.write((uint8_t*)&x, 4);
+                tb.write((uint8_t*)&y, 4);
+                if (x < lx) { lx = x; }
+                if (x > hx) { hx = x; }
+                if (y < ly) { ly = y; }
+                if (y > hy) { hy = y; }
+                pt++;
+              }
+            }
+          }
+          f.close();
+          tb.close();
+          
+          if (pt == 0) {
+            d.fillScreen(bg);
+            d.setCursor(10, 50);
+            d.print("ERR: 0 points");
+            n = ""; 
+            cs = false;
+          } else {
+            float cl_c = cos(((ly + hy) / 2.0) * 3.1415926 / 180.0);
+            float dw = (hx - lx) * cl_c;
+            float dh = (hy - ly);
+            if (dh == 0.0) { dh = 0.0001; }
+            if (dw == 0.0) { dw = 0.0001; }
+            
+            if (dw / dh > 0.75) {
+              float nh = dw / 0.75;
+              float cy = (ly + hy) / 2.0;
+              hy = cy + (nh / 2.0);
+              ly = cy - (nh / 2.0);
+            } else {
+              float nw = dh * 0.75;
+              float cx_c = (lx + hx) / 2.0;
+              hx = cx_c + (nw / 2.0) / cl_c;
+              lx = cx_c - (nw / 2.0) / cl_c;
+            }
+            bb = true;
+            d.fillScreen(bg); 
+          }
+        } else {
+          d.fillScreen(bg);
+          d.setCursor(10, 50);
+          d.print("ERR: Open failed");
+          n = ""; 
+          cs = false;
+        }
+      }
+      
+      if (bb) {
+        vx = (hx - lx) / zm;
+        vy = (hy - ly) / zm;
+        if (vx == 0.0) { vx = 0.0001; }
+        if (vy == 0.0) { vy = 0.0001; }
+        
+        float cx_m = (lx + hx) / 2.0 + ox_m;
+        float cy_m = (ly + hy) / 2.0 + oy_m;
+        vlx = cx_m - (vx / 2.0);
+        vly = cy_m - (vy / 2.0);
+        
+        d_m(); 
+
+        float x_m = 240.0 / vx;
+        float y_m = 320.0 / vy;
+        int p_x = -1, py_draw = -1;
+        
+        File tb = SD.open("/t.bin");
+        if (tb) {
+          static uint8_t* t_bf = NULL;
+          if (t_bf == NULL) {
+            t_bf = (uint8_t*)malloc(8000);
+          }
+          if (t_bf) {
+            d.startWrite();
+            while (tb.available()) {
+              int r_c = tb.read(t_bf, 8000);
+              int s_c = r_c / 8;
+              
+              for (int i = 0; i < s_c; i++) {
+                float x = *(float*)(t_bf + i * 8);
+                float y = *(float*)(t_bf + i * 8 + 4);
+                
+                int c_x = (x - vlx) * x_m;
+                int c_y = 320 - ((y - vly) * y_m);
+
+                if (p_x != -1) { 
+                  if (p_x != c_x || py_draw != c_y) {
+                    if (!((p_x < -50 && c_x < -50) || (p_x > 290 && c_x > 290) || (py_draw < -50 && c_y < -50) || (py_draw > 370 && c_y > 370))) {
+                      d.writeLine(p_x, py_draw, c_x, c_y, rt);
+                      d.writeLine(p_x + 1, py_draw, c_x + 1, c_y, rt);
+                      d.writeLine(p_x, py_draw + 1, c_x, c_y + 1, rt);
+                    }
+                  }
+                }
+                p_x = c_x; py_draw = c_y;
+              }
+              d.endWrite();
+              yield(); 
+              w.handleClient(); 
+              ug(); 
+              d.startWrite();
+            }
+            d.endWrite();
+          }
+          tb.close();
+        }
+        cs = false;
+      }
+    }
+  }
+
+  if (sk) {
+    if (n != "") {
+      if (bb) {
+        if (u_ok) {
+          int c_x = (u_lo - vlx) * 240.0 / vx;
+          int c_y = 320 - ((u_la - vly) * 320.0 / vy);
+
+          if (c_x != ox || c_y != oy) {
+            if (ox != -1) { 
+              d.fillCircle(ox, oy, 4, bg); 
+            }
+            d.fillCircle(c_x, c_y, 4, ILI9341_RED);
+            ox = c_x; oy = c_y;
+          }
+        }
+      }
+    }
+  }
+  
+  d.setTextSize(2);
+  
+  if (u_sp != c_sp) {
+    d.setCursor(10, 5); 
+    d.setTextColor(cl(u_sp), bg); 
+    d.print(u_sp, 1); 
+    d.setTextColor(tx, bg); 
+    d.print("   ");
+    c_sp = u_sp;
+  }
+  
+  int sat = 0;
+  if (u_ph) {
+    sat = 99;
+  } else {
+    if (tg.satellites.isValid()) {
+      sat = tg.satellites.value();
+    }
+  }
+
+  if (sat != c_st) {
+    d.setCursor(200, 5); 
+    if (sat == 99) {
+      d.print("PH "); 
+    } else {
+      d.print(sat); 
+      d.print("   "); 
+    }
+    c_st = sat;
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  gs.begin(9600, SERIAL_8N1, 17, 16); 
+  delay(1000); 
+
+  pinMode(10, OUTPUT); 
+  digitalWrite(10, HIGH);
+  
+  pinMode(6, OUTPUT);
+  digitalWrite(6, HIGH);
+
+  pinMode(14, OUTPUT);
+  digitalWrite(14, HIGH);
+  
+  pinMode(7, INPUT_PULLUP);
+
+  SPI.end(); 
+  SPI.begin(12, 13, 11, -1); 
+
+  SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
+  digitalWrite(14, LOW);
+  SPI.transfer(0x80); 
+  digitalWrite(14, HIGH);
+  SPI.endTransaction();
+
+  d.begin();
+  d.setRotation(0); 
+  
+  tc.begin();
+  tc.setRotation(0);
+
+  b2.begin(18, 19, 21, -1); 
+
+  Wire.begin(4, 5); 
+  if (ah.begin()) {
+    ah_ok = true;
+  }
+  
+  if (SD.begin(15, b2, 40000000)) { 
+    sk = true;
+    if (SD.exists("/last.txt")) {
+      File c = SD.open("/last.txt");
+      if (c) {
+        n = c.readString();
+        c.close();
+        n.trim();
+      }
+    }
+    if (!SD.exists(n)) {
+      File rt = SD.open("/");
+      while (File e = rt.openNextFile()) {
+        String m = e.name();
+        if (!e.isDirectory()) {
+          String tl = m;
+          tl.toLowerCase();
+          if (tl.endsWith(".gpx")) {
+            if (m.startsWith("/")) {
+              n = m;
+            } else {
+              n = "/" + m;
+            }
+            break;
+          }
+        }
+      }
+    }
+  } else {
+    sk = false;
+  }
+
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("ESP32-Gravel", "12345678");
+
+  w.on("/", HTTP_GET, pg);
+  w.on("/sw", HTTP_GET, ssw);
+  w.on("/slp", HTTP_GET, s_slp);
+  w.on("/zm", HTTP_GET, s_zm); 
+  w.on("/mv", HTTP_GET, s_mv); 
+  w.on("/ac", HTTP_GET, s_ac); 
+  w.on("/pgps", HTTP_GET, s_pgps); 
+  w.on("/t_tg", HTTP_GET, t_tg);
+  w.on("/t_cl", HTTP_GET, t_cl);
+  w.on("/up", HTTP_POST, ok, up);
+  w.on("/ls", HTTP_GET, gls); 
+  w.on("/dr", HTTP_GET, sdr);
+  w.on("/dl", HTTP_GET, d_dl); 
+  w.begin();
+  
+  cur_n = is_n();
+  if (cur_n) {
+    bg = ILI9341_BLACK;
+    tx = ILI9341_WHITE;
+    rt = ILI9341_CYAN;
+  } else {
+    bg = ILI9341_WHITE;
+    tx = ILI9341_BLACK;
+    rt = ILI9341_BLUE;
+  }
+  
+  cs = true; 
+  g = true; 
+}
+
+void loop() {
+  w.handleClient();
+  ug(); 
+
+  bool tch = (digitalRead(7) == LOW);
+  if (tch) {
+    if (!p_tc) {
+      uint32_t m = millis();
+      if (m - t_t < 400 && m - t_t > 50) {
+        t_c = 2;
+        t_t = m;
+      } else {
+        t_c = 1;
+        t_t = m;
+        TS_Point p = tc.getPoint();
+        l_tx = map(p.x, 300, 3800, 0, 240);
+        l_ty = map(p.y, 300, 3800, 0, 320);
+      }
+    }
+    p_tc = true;
+  } else {
+    p_tc = false;
+  }
+
+  if (t_c == 1) {
+    if (millis() - t_t > 400) {
+      if (vm == 2) {
+        if (l_ty > 20 && l_ty < 80) { t_tg(); pm = -1; g = true; }
+        if (l_ty > 100 && l_ty < 160) { t_cl(); pm = -1; g = true; }
+        if (l_ty > 180 && l_ty < 240) { s_slp(); }
+      }
+      t_c = 0;
+    }
+  } else if (t_c == 2) {
+    vm++;
+    if (vm > 2) {
+      vm = 0;
+    }
+    pm = -1;
+    cs = true;
+    g = true;
+    t_c = 0;
+  }
+
+  bool n_now = is_n();
+  if (n_now != cur_n) {
+    cur_n = n_now;
+    if (cur_n) {
+      bg = ILI9341_BLACK;
+      tx = ILI9341_WHITE;
+      rt = ILI9341_CYAN;
+    } else {
+      bg = ILI9341_WHITE;
+      tx = ILI9341_BLACK;
+      rt = ILI9341_BLUE;
+    }
+    pm = -1; 
+    cs = true; 
+    g = true;
+  }
+
+  if (sl_r) {
+    sl_r = false;
+    
+    digitalWrite(6, LOW); 
+    d.sendCommand(0x10);
+    
+    WiFi.mode(WIFI_OFF);
+    
+    pinMode(7, INPUT_PULLUP);
+    gpio_wakeup_enable(GPIO_NUM_7, GPIO_INTR_LOW_LEVEL);
+    esp_sleep_enable_gpio_wakeup();
+
+    bool wk = false;
+    while (!wk) {
+      esp_light_sleep_start(); 
+      
+      while (digitalRead(7) == LOW) {
+        yield();
+      }
+      
+      delay(50); 
+      uint32_t tw = millis();
+      
+      while (millis() - tw < 500) {
+        if (digitalRead(7) == LOW) {
+          wk = true;
+          break;
+        }
+      }
+    }
+
+    d.sendCommand(0x11);
+    delay(120); 
+    digitalWrite(6, HIGH); 
+    
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("ESP32-Gravel", "12345678");
+    w.begin();
+    
+    pm = -1; 
+    cs = true; 
+    g = true; 
+  }
+  
+  if (g || (millis() - lu > 1000)) {
+    g = false;
+    lu = millis();
+    
+    if (vm != pm) {
+      d.fillScreen(bg);
+      pm = vm;
+      cs = true; 
+      
+      c_sp = -1.0; c_as = -1.0; c_ds = -1.0; c_mx = -1.0;
+      c_h = -1; c_m = -1; c_th = -1; c_tm = -1; c_ts = -1; c_st = -1;
+      c_t = -999.0; c_hm = -999.0;
+      c_bp = -1; 
+    }
+    
+    if (vm == 0) {
+      dr();
+    } else if (vm == 1) {
+      dd();
+    } else if (vm == 2) {
+      db();
+    }
+  }
+}
