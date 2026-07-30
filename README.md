@@ -59,41 +59,41 @@ If the battery readings do not match your multimeter, adjust the multiplier in t
 float v = (analogReadMilliVolts(b_p) / 1000.0) * 2.065;
 
 =======================================================================
-                         МК: ESP32-S3 (Центр)
+                         MCU: ESP32-S3 (Core)
 =======================================================================
 
-[ Шина SPI (Дисплей и Тачскрин) ]
-Pin 12  <======>  SCK (Общий)
-Pin 13  <======>  MISO (Общий)
-Pin 11  <======>  MOSI (Общий)
+[ SPI Bus (Display & Touchscreen) ]
+Pin 12  <======>  SCK (Shared)
+Pin 13  <======>  MISO (Shared)
+Pin 11  <======>  MOSI (Shared)
  |
- |-- [ ILI9341 (Экран) ]
+ |-- [ ILI9341 (Display) ]
  |    Pin 10  <======>  CS
  |    Pin 9   <======>  DC
  |    Pin 8   <======>  RST
- |    Pin 6   <======>  LED (Управление подсветкой экрана)
+ |    Pin 6   <======>  LED (Display backlight control)
  |
- |-- [ XPT2046 (Тачскрин) ]
+ |-- [ XPT2046 (Touchscreen) ]
       Pin 2   <======>  CS
-      Pin 7   <======>  IRQ (Аппаратное прерывание по касанию экрана)
+      Pin 7   <======>  IRQ (Hardware interrupt on touch)
 
-[ Шина HSPI (MicroSD Модуль) ]
+[ HSPI Bus (MicroSD Module) ]
 Pin 18  <======>  SCK
 Pin 19  <======>  MISO
 Pin 21  <======>  MOSI
 Pin 15  <======>  CS
 
-[ Шина UART 1 (GPS Модуль) ]
-Pin 17  <======>  RX (Соединить с TX GPS-модуля)
-Pin 16  <======>  TX (Соединить с RX GPS-модуля)
+[ UART 1 Bus (GPS Module) ]
+Pin 17  <======>  RX (Connect to GPS TX)
+Pin 16  <======>  TX (Connect to GPS RX)
 
-[ Шина I2C (Датчик климата AHT20) ]
+[ I2C Bus (AHT20 Climate Sensor) ]
 Pin 4   <======>  SDA
 Pin 5   <======>  SCL
 
-[ Замер заряда АКБ ]
-Pin 1   <======>  ADC_1 (Подключен к центру делителя напряжения 100k/100k)
+[ Battery Level Measurement ]
+Pin 1   <======>  ADC_1 (Connected to center of 100k/100k voltage divider)
 
-[ Инициализация SPI ]
-Pin 14  <======>  CS-пин (Используется для кастомной отправки 0x80 при setup)
+[ SPI Initialization ]
+Pin 14  <======>  CS pin (Used for custom 0x80 transmission during setup)
 =======================================================================
