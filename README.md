@@ -57,3 +57,43 @@ To compile the project, the following libraries are required:
 If the battery readings do not match your multimeter, adjust the multiplier in the `g_bat()` function (currently set to `2.065` to compensate for voltage drops on the divider):
 ```cpp
 float v = (analogReadMilliVolts(b_p) / 1000.0) * 2.065;
+
+=======================================================================
+                         МК: ESP32-S3 (Центр)
+=======================================================================
+
+[ Шина SPI (Дисплей и Тачскрин) ]
+Pin 12  <======>  SCK (Общий)
+Pin 13  <======>  MISO (Общий)
+Pin 11  <======>  MOSI (Общий)
+ |
+ |-- [ ILI9341 (Экран) ]
+ |    Pin 10  <======>  CS
+ |    Pin 9   <======>  DC
+ |    Pin 8   <======>  RST
+ |    Pin 6   <======>  LED (Управление подсветкой экрана)
+ |
+ |-- [ XPT2046 (Тачскрин) ]
+      Pin 2   <======>  CS
+      Pin 7   <======>  IRQ (Аппаратное прерывание по касанию экрана)
+
+[ Шина HSPI (MicroSD Модуль) ]
+Pin 18  <======>  SCK
+Pin 19  <======>  MISO
+Pin 21  <======>  MOSI
+Pin 15  <======>  CS
+
+[ Шина UART 1 (GPS Модуль) ]
+Pin 17  <======>  RX (Соединить с TX GPS-модуля)
+Pin 16  <======>  TX (Соединить с RX GPS-модуля)
+
+[ Шина I2C (Датчик климата AHT20) ]
+Pin 4   <======>  SDA
+Pin 5   <======>  SCL
+
+[ Замер заряда АКБ ]
+Pin 1   <======>  ADC_1 (Подключен к центру делителя напряжения 100k/100k)
+
+[ Инициализация SPI ]
+Pin 14  <======>  CS-пин (Используется для кастомной отправки 0x80 при setup)
+=======================================================================
