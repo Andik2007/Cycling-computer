@@ -14,25 +14,25 @@ A standalone GPS navigator and bike computer for gravel bikes based on the ESP32
 - **Power Efficiency:** Transitions to `light_sleep` mode with hardware wake-up (interrupt) via touchscreen tap.
 
 ## 🔩 Components 
--ESP32-S3 - Development board
+ESP32-S3 - Development board
 
--Display - 2.4-inch 240x320 ILI9341 SPI TFT LCD module with touch screen
+Display - 2.4-inch 240x320 ILI9341 SPI TFT LCD module with touch screen
 
--GPS - UART receiver module
+GPS - UART receiver module
 
--AHT20 - I2C temperature and humidity sensor
+AHT20 - I2C temperature and humidity sensor
 
--MicroSD - SPI memory card adapter module
+MicroSD - SPI memory card adapter module
 
--MicroSD Card - Memory card
+MicroSD Card - Memory card
 
--Battery - 3.7V Li-Ion / Li-Po battery
+Battery - 3.7V Li-Ion 523450 1000 mAH
 
--Resistors - 100kΩ (2 pcs)
+Resistors - 100kΩ (2 pcs)
 
--Screws - M2x20 DIN 912 cylindrical head (6 pcs)
+Screws - M2x20 DIN 912 cylindrical head (6 pcs)
 
--Brass nuts - M2 4x3.5 threaded inserts for 3D printing (6 pcs)
+Brass nuts - M2 4x3.5 threaded inserts for 3D printing (6 pcs)
 
 
 ## 🔌 Wiring Diagram (Pinout)
