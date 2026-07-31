@@ -18,7 +18,7 @@ ESP32-S3 - Development board
 
 Display - 2.4-inch 240x320 ILI9341 SPI TFT LCD module with touch screen
 
-GPS - UART receiver module
+GPS - UART receiver module ATGM336H TZT for NEO-M8N
 
 AHT20 - I2C temperature and humidity sensor
 
