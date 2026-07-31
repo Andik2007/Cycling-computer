@@ -35,7 +35,7 @@ Screws - M2x20 DIN 912 cylindrical head (6 pcs)
 Brass nuts - M2 4x3.5 threaded inserts for 3D printing (6 pcs)
 
 
-=======================================================================
+```=======================================================================
                          MCU: ESP32-S3 (Core)
 =======================================================================
 
@@ -74,7 +74,7 @@ Pin 1   <======>  ADC_1 (Connected to center of 100k/100k voltage divider)
 [ SPI Initialization ]
 Pin 14  <======>  CS pin (Used for custom 0x80 transmission during setup)
 =======================================================================
-
+```
 ## 🔌 Wiring Diagram (Pinout)
 
 | Component | ESP32-S3 Pins | Description |
