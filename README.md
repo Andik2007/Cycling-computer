@@ -1,9 +1,8 @@
-# Cycling-computer
-ESP32-S3 Gravel Bike Computer — an autonomous GPS bike computer.Stack: ESP32-S3, ILI9341+XPT2046, SD, GPS, AHT20.Features: Strava-compatible GPX recording, offline GeoJSON navigation with surface type color-coding, real-time telemetry, Wi-Fi web server for map/track synchronization, and power-saving mode.
-# ESP32-S3 Gravel Bike Computer
+# THIS computer was created as a fan project and cannot fully compete with factory‑made products.
 
-A standalone GPS navigator and bike computer for gravel bikes based on the ESP32-S3 microcontroller. The device supports offline navigation, Strava-compatible track recording, ride metrics collection, and features a built-in web interface for wireless file management.
+# A bicycle computer based on ESP32-S3 (GPS and offline maps)
 
+A standalone GPS navigator and bicycle computer for 3D printing, designed for bicycles based on ESP32-S3. The device supports offline navigation, real‑time performance tracking, and is equipped with a built‑in Wi‑Fi web interface for wireless file management directly from a phone. In the future, it is planned to add the ability to upload tracks and send them to the Strava app, as well as an additional device for tracking heart rate and body temperature.
 ## 🚀 Features
 
 - **Strava-ready GPX:** Records tracks with accurate timestamps for valid export to Strava.
