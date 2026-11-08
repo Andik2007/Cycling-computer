@@ -91,17 +91,16 @@ Pin 14  <======>  CS pin (Used for custom 0x80 transmission during setup)
 
 ## 📦 Dependencies (PlatformIO)
 
-To compile the project, the following libraries are required:
-Вендор / Автор,Название библиотеки,Версия
-adafruit,Adafruit GFX Library,Не указана
-adafruit,Adafruit ILI9341,Не указана
-paulstoffregen,XPT2046_Touchscreen,Не указана
-adafruit,Adafruit AHTX0,2.0.6 (есть дубликат без версии)
-mikalhart,TinyGPSPlus,1.1.0 (есть дубликат без версии)
-links2004,WebSockets,2.7.3 (есть дубликат без версии)
-bblanchon,ArduinoJson,7.4.3 (есть дубликат без версии)
-bodmer,TFT_eSPI,^2.5.43
-
+| Vendor / Author | Library Name | Version |
+| :--- | :--- | :--- |
+| `adafruit` | Adafruit GFX Library | *Not specified* |
+| `adafruit` | Adafruit ILI9341 | *Not specified* |
+| `paulstoffregen` | XPT2046_Touchscreen | *Not specified* |
+| `adafruit` | Adafruit AHTX0 | `2.0.6` |
+| `mikalhart` | TinyGPSPlus | `1.1.0` |
+| `links2004` | WebSockets | `2.7.3` |
+| `bblanchon` | ArduinoJson | `7.4.3` |
+| `bodmer` | TFT_eSPI | `^2.5.43` |
 ## ⚙️ Installation and Usage
 
 1. Compile and upload the firmware to the ESP32-S3 via PlatformIO.
