@@ -11,6 +11,14 @@ A standalone GPS navigator and bicycle computer for 3D printing, designed for bi
 - **Accurate Telemetry:** Displays speed, distance, battery level (with hardware calibration), and microclimate (AHT20).
 - **Smart UI:** Automatic day/night theme switching based on satellite time.
 - **Power Efficiency:** Transitions to `light_sleep` mode with hardware wake-up (interrupt) via touchscreen tap.
+<img width="524" height="315" alt="3" src="https://github.com/user-attachments/assets/3f524a14-6111-4994-b3a3-4ca6d98eb4a5" />
+<img width="524" height="206" alt="4" src="https://github.com/user-attachments/assets/5c593e58-8b78-4bc2-9881-8dbea541c6c6" />
+<img width="514" height="552" alt="1" src="https://github.com/user-attachments/assets/0d7618a7-f344-4712-95c8-43c6865de5b6" />
+<img width="206" height="315" alt="2" src="https://github.com/user-attachments/assets/22b8ae8a-b3d9-45bd-acdd-4d8ef1fb58ea" />
+<img width="828" height="1792" alt="web" src="https://github.com/user-attachments/assets/a2c8fca6-07cc-4d6f-af8d-0c9f4ecb455d" />
+<img width="828" height="1792" alt="web1" src="https://github.com/user-attachments/assets/10ac5b5f-888c-42d7-aba9-4831e5baa451" />
+<img width="1516" height="2560" alt="Screen interface" src="https://github.com/user-attachments/assets/ba0effb2-7cf3-49d3-aa97-15d260619d31" />
+<img width="1526" height="2560" alt="Screen interface1" src="https://github.com/user-attachments/assets/4f53e4f0-aef0-4412-89af-77f3892d48c9" />
 
 ## 🔩 Components 
 ESP32-S3 - Development board
@@ -34,6 +42,9 @@ Screws - M2x20 DIN 912 cylindrical head (6 pcs)
 Brass nuts - M2 4x3.5 threaded inserts for 3D printing (6 pcs)
 
 ## Wiring 
+<img width="524" height="206" alt="5" src="https://github.com/user-attachments/assets/bc93750a-cf8e-4d80-9b83-c15281a7333e" />
+
+
 ```
 Wiring 
 =======================================================================
