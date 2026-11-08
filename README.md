@@ -92,11 +92,15 @@ Pin 14  <======>  CS pin (Used for custom 0x80 transmission during setup)
 ## 📦 Dependencies (PlatformIO)
 
 To compile the project, the following libraries are required:
-- `Adafruit GFX Library`
-- `Adafruit ILI9341`
-- `Adafruit AHTX0`
-- `XPT2046_Touchscreen`
-- `TinyGPSPlus`
+Вендор / Автор,Название библиотеки,Версия
+adafruit,Adafruit GFX Library,Не указана
+adafruit,Adafruit ILI9341,Не указана
+paulstoffregen,XPT2046_Touchscreen,Не указана
+adafruit,Adafruit AHTX0,2.0.6 (есть дубликат без версии)
+mikalhart,TinyGPSPlus,1.1.0 (есть дубликат без версии)
+links2004,WebSockets,2.7.3 (есть дубликат без версии)
+bblanchon,ArduinoJson,7.4.3 (есть дубликат без версии)
+bodmer,TFT_eSPI,^2.5.43
 
 ## ⚙️ Installation and Usage
 
